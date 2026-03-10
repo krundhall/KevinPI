@@ -91,7 +91,11 @@ function KPI.ToggleGlow(show)
     if show and KPI.isPIActive
     and not KPI.isPreview
     and db.soundFile ~= "None" then
-        PlaySoundFile(KPI.SOUNDS_DIR .. db.soundFile, db.soundChannel)
+        local fileToPlay = db.soundFile
+        if fileToPlay == "Random" then
+            fileToPlay = KPI.soundFiles[math.random(1, #KPI.soundFiles)]
+        end
+        PlaySoundFile(KPI.SOUNDS_DIR .. fileToPlay, db.soundChannel)
     end
 end
 

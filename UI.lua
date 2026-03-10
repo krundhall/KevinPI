@@ -15,7 +15,7 @@ local SOUND_CHANNELS = {
     { text = "Ambience", value = "Ambience" }
 }
 
-local SOUND_FILES = { { text = "None", value = "None" } }
+local SOUND_FILES = { { text = "None", value = "None" }, { text = "Random", value = "Random" } }
 for _, file in ipairs(KPI.soundFiles) do
     table.insert(SOUND_FILES, { text = file, value = file })
 end
@@ -120,6 +120,21 @@ soundLabel:SetText("Sound")
 local soundDropdown = CreateFrame("Frame", "KPI_SoundDropdown", KPI.config, "UIDropDownMenuTemplate")
 soundDropdown:SetPoint("TOP", 0, -240)
 UIDropDownMenu_SetWidth(soundDropdown, 180)
+
+local randomSoundBtn = CreateFrame("Button", nil, KPI.config, "UIPanelButtonTemplate")
+randomSoundBtn:SetSize(70, 22)
+randomSoundBtn:SetPoint("TOP", 0, -270) -- just below
+randomSoundBtn:SetText("Random")
+randomSoundBtn:SetScript("OnClick", function()
+    local db = KPI.GetSafeDB()
+    local files = KPI.soundFiles
+    if #files == 0 then return end
+    local pick = files[math.random(1, #files)]
+    db.soundFile = pick
+    UIDropDownMenu_SetText(soundDropdown, pick)
+    PlayPreview(pick, db.soudnChannel)
+end)
+
 
 -------------------------------------------------
 -- Sound Channel

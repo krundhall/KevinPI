@@ -22,17 +22,21 @@ KPI.piCDActive = false
 KPI.piCDStart = 0
 
 -- DB
+local defaults = {
+    size = 96,
+    pos = {"CENTER", nil, "CENTER", 0, 120},
+    cdPos = {"CENTER", nil, "CENTER", 0, -120},
+    glowType = "Button",
+    glowThickness = 2,
+    showSelfPI = true,
+    soundFile = "None",
+    soundChannel = "Master",
+}
+
 function KPI.GetSafeDB()
-    if not KevinPIDB then
-        KevinPIDB = {
-            size = 96,
-            pos = {"CENTER", nil, "CENTER", 0, 120},
-            glowType = "Button",
-            glowThickness = 2,
-            showSelfPI = true,
-            soundFile = "None",
-            soundChannel = "Master",
-        }
+    if not KevinPIDB then KevinPIDB = {} end
+    for k, v in pairs(defaults) do
+        if KevinPIDB[k] == nil then KevinPIDB[k] = v end
     end
     return KevinPIDB
 end

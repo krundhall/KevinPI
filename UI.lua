@@ -32,7 +32,7 @@ end
 -------------------------------------------------
 KPI.config = CreateFrame("Frame", "KPI_ConfigPanel", UIParent, "BackdropTemplate")
 KPI.config:SetFrameStrata("HIGH")
-KPI.config:SetSize(350, 520)
+KPI.config:SetSize(350, 640)
 KPI.config:SetPoint("CENTER")
 KPI.config:SetBackdrop({
     bgFile = "Interface\\Buttons\\WHITE8x8",
@@ -57,7 +57,9 @@ close:SetPoint("TOPRIGHT", -4, -4)
 close:SetScript("OnClick", function()
     KPI.config:Hide()
     KPI.HidePreview()
+    KPI.HideCDPreview()
     KPI.piFrame:EnableMouse(false)
+    KPI.piCDFrame:EnableMouse(false)
 end)
 
 -------------------------------------------------
@@ -74,6 +76,7 @@ sizeSlider:SetScript("OnValueChanged", function(self, v)
     local db = KPI.GetSafeDB()
     db.size = math.floor(v)
     KPI.piFrame:SetSize(db.size, db.size)
+    KPI.piCDFrame:SetSize(db.size, db.size)
     KPI.UpdateTextScale()
     if KPI.piFrame:IsShown() then KPI.ToggleGlow(true) end
 end)
@@ -142,12 +145,12 @@ selfPICheck:SetScript("OnClick", function(self)
 end)
 
 -------------------------------------------------
--- Icon Position
+-- Active Icon Position
 -------------------------------------------------
 local iconPosLabel = KPI.config:CreateFontString(nil, "OVERLAY")
 iconPosLabel:SetPoint("TOP", 0, -390)
 iconPosLabel:SetFont(STANDARD_TEXT_FONT, 14, "OUTLINE")
-iconPosLabel:SetText("Icon Position")
+iconPosLabel:SetText("Active Icon Position")
 
 local iconXSlider = CreateFrame("Slider", "KPI_IconXSlider", KPI.config, "OptionsSliderTemplate")
 iconXSlider:SetPoint("TOP", -15, -423)
@@ -198,6 +201,66 @@ end)
 iconYInput:SetScript("OnEnterPressed", function(self)
     local v = tonumber(self:GetText())
     if v then iconYSlider:SetValue(v) end
+    self:ClearFocus()
+end)
+
+-------------------------------------------------
+-- Cooldown Icon Position
+-------------------------------------------------
+local cdPosLabel = KPI.config:CreateFontString(nil, "OVERLAY")
+cdPosLabel:SetPoint("TOP", 0, -515)
+cdPosLabel:SetFont(STANDARD_TEXT_FONT, 14, "OUTLINE")
+cdPosLabel:SetText("Cooldown Icon Position")
+
+local cdXSlider = CreateFrame("Slider", "KPI_CDXSlider", KPI.config, "OptionsSliderTemplate")
+cdXSlider:SetPoint("TOP", -15, -548)
+cdXSlider:SetMinMaxValues(-1000, 1000)
+cdXSlider:SetValueStep(1)
+cdXSlider:SetWidth(180)
+_G["KPI_CDXSliderText"]:SetFont(STANDARD_TEXT_FONT, 13, "OUTLINE")
+_G["KPI_CDXSliderText"]:SetText("X")
+
+local cdXInput = CreateFrame("EditBox", "KPI_CDXInput", KPI.config, "InputBoxTemplate")
+cdXInput:SetPoint("LEFT", cdXSlider, "RIGHT", 8, 0)
+cdXInput:SetSize(55, 20)
+cdXInput:SetAutoFocus(false)
+
+cdXSlider:SetScript("OnValueChanged", function(self, v)
+    local db = KPI.GetSafeDB()
+    db.cdPos[4] = math.floor(v)
+    cdXInput:SetText(tostring(db.cdPos[4]))
+    KPI.piCDFrame:ClearAllPoints()
+    KPI.piCDFrame:SetPoint(db.cdPos[1], UIParent, db.cdPos[3], db.cdPos[4], db.cdPos[5])
+end)
+cdXInput:SetScript("OnEnterPressed", function(self)
+    local v = tonumber(self:GetText())
+    if v then cdXSlider:SetValue(v) end
+    self:ClearFocus()
+end)
+
+local cdYSlider = CreateFrame("Slider", "KPI_CDYSlider", KPI.config, "OptionsSliderTemplate")
+cdYSlider:SetPoint("TOP", -15, -598)
+cdYSlider:SetMinMaxValues(-700, 700)
+cdYSlider:SetValueStep(1)
+cdYSlider:SetWidth(180)
+_G["KPI_CDYSliderText"]:SetFont(STANDARD_TEXT_FONT, 13, "OUTLINE")
+_G["KPI_CDYSliderText"]:SetText("Y")
+
+local cdYInput = CreateFrame("EditBox", "KPI_CDYInput", KPI.config, "InputBoxTemplate")
+cdYInput:SetPoint("LEFT", cdYSlider, "RIGHT", 8, 0)
+cdYInput:SetSize(55, 20)
+cdYInput:SetAutoFocus(false)
+
+cdYSlider:SetScript("OnValueChanged", function(self, v)
+    local db = KPI.GetSafeDB()
+    db.cdPos[5] = math.floor(v)
+    cdYInput:SetText(tostring(db.cdPos[5]))
+    KPI.piCDFrame:ClearAllPoints()
+    KPI.piCDFrame:SetPoint(db.cdPos[1], UIParent, db.cdPos[3], db.cdPos[4], db.cdPos[5])
+end)
+cdYInput:SetScript("OnEnterPressed", function(self)
+    local v = tonumber(self:GetText())
+    if v then cdYSlider:SetValue(v) end
     self:ClearFocus()
 end)
 
@@ -261,17 +324,33 @@ end)
 -------------------------------------------------
 function KPI.ApplySettings()
     local db = KPI.GetSafeDB()
+
+    -- Active frame
     KPI.piFrame:SetSize(db.size, db.size)
     local p = db.pos
     KPI.piFrame:ClearAllPoints()
     KPI.piFrame:SetPoint(p[1], UIParent, p[3], p[4], p[5])
+
+    -- CD frame
+    KPI.piCDFrame:SetSize(db.size, db.size)
+    local cp = db.cdPos
+    KPI.piCDFrame:ClearAllPoints()
+    KPI.piCDFrame:SetPoint(cp[1], UIParent, cp[3], cp[4], cp[5])
+
     sizeSlider:SetValue(db.size)
     thickSlider:SetValue(db.glowThickness)
     selfPICheck:SetChecked(db.showSelfPI)
+
     iconXSlider:SetValue(db.pos[4])
     iconYSlider:SetValue(db.pos[5])
     iconXInput:SetText(tostring(db.pos[4]))
     iconYInput:SetText(tostring(db.pos[5]))
+
+    cdXSlider:SetValue(db.cdPos[4])
+    cdYSlider:SetValue(db.cdPos[5])
+    cdXInput:SetText(tostring(db.cdPos[4]))
+    cdYInput:SetText(tostring(db.cdPos[5]))
+
     KPI.UpdateTextScale()
     for _, g in ipairs(GLOW_TYPES) do
         if g.value == db.glowType then UIDropDownMenu_SetText(glowDropdown, g.text) end
@@ -292,11 +371,15 @@ SlashCmdList["KPIALERT"] = function()
     if KPI.config:IsShown() then
         KPI.config:Hide()
         KPI.HidePreview()
+        KPI.HideCDPreview()
         KPI.piFrame:EnableMouse(false)
+        KPI.piCDFrame:EnableMouse(false)
     else
         KPI.config:Show()
         KPI.ShowPreview()
+        KPI.ShowCDPreview()
         KPI.piFrame:EnableMouse(true)
+        KPI.piCDFrame:EnableMouse(true)
         KPI.ApplySettings()
     end
 end

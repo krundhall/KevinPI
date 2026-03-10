@@ -2,7 +2,9 @@
 local KPI = KPI_Global
 local LCG = LibStub("LibCustomGlow-1.0", true)
 
--- Frame
+-------------------------------------------------
+-- Active PI Frame
+-------------------------------------------------
 KPI.piFrame = CreateFrame("Frame", "KPI_MainFrame", UIParent)
 KPI.piFrame:SetFrameStrata("HIGH")
 KPI.piFrame:SetMovable(true)
@@ -15,29 +17,44 @@ KPI.piFrame:SetScript("OnDragStop", function(self)
 end)
 KPI.piFrame:Hide()
 
--- Texture
 local piTexture = KPI.piFrame:CreateTexture(nil, "ARTWORK")
 piTexture:SetAllPoints()
 piTexture:SetTexture(C_Spell.GetSpellTexture(KPI.SPELL_ID) or "Interface\\Icons\\Spell_Holy_PowerInfusion")
 piTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
--- Timer
 KPI.piTimer = KPI.piFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 KPI.piTimer:SetPoint("TOP", KPI.piFrame, "BOTTOM", 0, -5)
 KPI.piTimer:SetTextColor(1, 0.82, 0, 1)
 
-local function SetActiveVisual()
-    piTexture:SetDesaturated(false)
-    piTexture:SetAlpha(1)
-    KPI.piTimer:SetTextColor(1, 0.82, 0, 1)
-end
+-------------------------------------------------
+-- Cooldown Frame
+-------------------------------------------------
+KPI.piCDFrame = CreateFrame("Frame", "KPI_CDFrame", UIParent)
+KPI.piCDFrame:SetFrameStrata("HIGH")
+KPI.piCDFrame:SetMovable(true)
+KPI.piCDFrame:RegisterForDrag("LeftButton")
+KPI.piCDFrame:SetScript("OnDragStart", KPI.piCDFrame.StartMoving)
+KPI.piCDFrame:SetScript("OnDragStop", function(self)
+    self:StopMovingOrSizing()
+    local point, _, relPoint, x, y = self:GetPoint()
+    KPI.GetSafeDB().cdPos = {point, nil, relPoint, x, y}
+end)
+KPI.piCDFrame:Hide()
 
-local function SetCooldownVisual()
-    piTexture:SetDesaturated(true)
-    piTexture:SetAlpha(0.5)
-    KPI.piTimer:SetTextColor(0.6, 0.6, 0.6, 1)
-end
+local cdTexture = KPI.piCDFrame:CreateTexture(nil, "ARTWORK")
+cdTexture:SetAllPoints()
+cdTexture:SetTexture(C_Spell.GetSpellTexture(KPI.SPELL_ID) or "Interface\\Icons\\Spell_Holy_PowerInfusion")
+cdTexture:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+cdTexture:SetDesaturated(true)
+cdTexture:SetAlpha(0.5)
 
+KPI.piCDTimer = KPI.piCDFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+KPI.piCDTimer:SetPoint("TOP", KPI.piCDFrame, "BOTTOM", 0, -5)
+KPI.piCDTimer:SetTextColor(0.6, 0.6, 0.6, 1)
+
+-------------------------------------------------
+-- Helpers
+-------------------------------------------------
 local function HasPriestInGroup()
     local numMembers = GetNumGroupMembers()
     if numMembers == 0 then return false end
@@ -49,11 +66,14 @@ local function HasPriestInGroup()
     return false
 end
 
+-------------------------------------------------
 -- Functions
+-------------------------------------------------
 function KPI.UpdateTextScale()
     local size = KPI.piFrame:GetWidth()
     local fontSize = math.max(12, size * 0.35)
     KPI.piTimer:SetFont(STANDARD_TEXT_FONT, fontSize, "OUTLINE")
+    KPI.piCDTimer:SetFont(STANDARD_TEXT_FONT, fontSize, "OUTLINE")
 end
 
 function KPI.ToggleGlow(show)
@@ -78,10 +98,12 @@ end
 function KPI.ShowPI()
     if not KPI.isInValidInstance then return end
     if KPI.isPIActive or KPI.isPreview then return end
+    -- Cancel any active cooldown display
     KPI.piCDActive = false
+    KPI.piCDFrame:Hide()
+    KPI.piCDTimer:SetText("")
     KPI.isPIActive = true
     KPI.piStartTime = GetTime()
-    SetActiveVisual()
     KPI.piFrame:Show()
     KPI.ToggleGlow(true)
 end
@@ -90,21 +112,19 @@ function KPI.HidePI()
     if not KPI.isPIActive then return end
     KPI.isPIActive = false
     KPI.ToggleGlow(false)
+    KPI.piFrame:Hide()
+    KPI.piTimer:SetText("")
     if KPI.isPreview then return end
     if HasPriestInGroup() then
         KPI.piCDActive = true
         KPI.piCDStart = GetTime()
-        SetCooldownVisual()
-        KPI.piFrame:Show()
-    else
-        KPI.piFrame:Hide()
+        KPI.piCDFrame:Show()
     end
 end
 
 function KPI.ShowPreview()
     KPI.isPreview = true
     KPI.piStartTime = GetTime()
-    SetActiveVisual()
     KPI.piFrame:Show()
     KPI.ToggleGlow(true)
 end
@@ -114,6 +134,18 @@ function KPI.HidePreview()
     KPI.ToggleGlow(false)
     KPI.piFrame:Hide()
     KPI.piTimer:SetText("")
+end
+
+function KPI.ShowCDPreview()
+    KPI.piCDFrame:Show()
+    KPI.piCDTimer:SetText("120")
+end
+
+function KPI.HideCDPreview()
+    if not KPI.piCDActive then
+        KPI.piCDFrame:Hide()
+        KPI.piCDTimer:SetText("")
+    end
 end
 
 function KPI.UpdateTimer()
@@ -133,14 +165,15 @@ function KPI.UpdateTimer()
         else
             KPI.piTimer:SetText(math.ceil(remain))
         end
-    elseif KPI.piCDActive then
+    end
+    if KPI.piCDActive then
         local remain = KPI.PI_COOLDOWN - (GetTime() - KPI.piCDStart)
         if remain <= 0 then
             KPI.piCDActive = false
-            KPI.piFrame:Hide()
-            KPI.piTimer:SetText("")
+            KPI.piCDFrame:Hide()
+            KPI.piCDTimer:SetText("")
         else
-            KPI.piTimer:SetText(math.ceil(remain))
+            KPI.piCDTimer:SetText(math.ceil(remain))
         end
     end
 end
@@ -154,6 +187,7 @@ function KPI.CheckInstanceStatus()
         KPI.isPIActive = false
         KPI.piCDActive = false
         KPI.piFrame:Hide()
+        KPI.piCDFrame:Hide()
         KPI.ToggleGlow(false)
     end
 end
@@ -161,7 +195,7 @@ end
 function KPI.UpdateCDVisibility()
     if KPI.piCDActive and not HasPriestInGroup() then
         KPI.piCDActive = false
-        KPI.piFrame:Hide()
-        KPI.piTimer:SetText("")
+        KPI.piCDFrame:Hide()
+        KPI.piCDTimer:SetText("")
     end
 end

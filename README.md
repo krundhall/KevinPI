@@ -5,7 +5,7 @@ A World of Warcraft addon that alerts you when you receive Power Infusion.
 ## Download
 
 1. Go to the [Releases](https://github.com/krundhall/KevinPI/releases/latest) page
-2. Download `KevinPI.zip`
+2. Download **`KevinPI.zip`** (not the Source code zip)
 3. Extract the ZIP
 4. Place the `KevinPI` folder in `World of Warcraft\_retail_\Interface\AddOns\`
 5. Reload WoW (`/reload`)

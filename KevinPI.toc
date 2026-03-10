@@ -1,0 +1,16 @@
+## Interface: 120001
+## Title: |cFFFF69B4Kevin PI|r
+## Notes: Guess what the addon does
+## Author: Kevin
+## Version: 1.0
+## SavedVariables: KevinPIDB
+## IconTexture: Interface\ICONS\Spell_holy_powerinfusion
+
+Libs\LibStub\LibStub.lua
+Libs\LibCustomGlow\LibCustomGlow.lua
+
+Core.lua
+Frame.lua
+Sounds.lua
+UI.lua
+Events.lua
